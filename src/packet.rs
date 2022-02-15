@@ -26,6 +26,7 @@ fn test_htonl() {
 
 pub fn pack_read(filename: &str, mode: &str) -> Vec<u8>{
     let mut v = Vec::new();
+    
 
     v.push(0);
     v.push(1);
@@ -71,6 +72,18 @@ pub fn pack_data( block: u16,  data: &mut Vec<u8> ) -> Vec<u8>{
     v.push(block as u8);
     v.push((block >> 8) as u8);
     v.append(data);
+
+    return v;
+}
+
+pub fn pack_ack( block: u16) -> Vec<u8>{
+    let mut v = Vec::new();
+
+    let hblock = htons(block);
+    v.push(0);
+    v.push(4);
+    v.push(block as u8);
+    v.push((block >> 8) as u8);
 
     return v;
 }
