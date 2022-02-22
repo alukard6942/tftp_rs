@@ -7,6 +7,7 @@
 
 
 #[cfg(target_endian = "little")]
+#[inline]
 fn htons(val : u16) -> u16 {
     let o1 = (val >> 8)  as u8;
     let o0 =  val        as u8;
@@ -14,6 +15,7 @@ fn htons(val : u16) -> u16 {
 }
 
 #[cfg(target_endian = "big")]
+#[inline]
 fn htons(val : u16) -> u16 {
     val
 }
@@ -63,15 +65,15 @@ pub fn pack_write(filename: &str, mode: &str) -> Vec<u8>{
     return v;
 }
 
-pub fn pack_data( block: u16,  data: &mut Vec<u8> ) -> Vec<u8>{
-    let mut v = Vec::new();
+pub fn pack_data( block: u16, size: usize) -> Vec<u8>{
+    let mut v = Vec::with_capacity(size);
 
     let hblock = htons(block);
     v.push(0);
     v.push(3);
-    v.push(block as u8);
-    v.push((block >> 8) as u8);
-    v.append(data);
+    v.push(hblock as u8);
+    v.push((hblock >> 8) as u8);
+    v.resize(size, 0);
 
     return v;
 }
@@ -82,8 +84,8 @@ pub fn pack_ack( block: u16) -> Vec<u8>{
     let hblock = htons(block);
     v.push(0);
     v.push(4);
-    v.push(block as u8);
-    v.push((block >> 8) as u8);
+    v.push(hblock as u8);
+    v.push((hblock >> 8) as u8);
 
     return v;
 }
@@ -93,6 +95,7 @@ pub trait Packet {
 
     fn block(&self) -> u16;
     fn opcode(&self) -> u8;
+    fn block_pp(&mut self);
 }
 
 
@@ -103,8 +106,15 @@ impl Packet for Vec<u8> {
         // there might not be space after
         // is not possible in corect pacckets
         unsafe {
-            htons(*(self.as_ptr() as *const u16).add(2))
+            htons(*(self.as_ptr() as *const u16).add(1))
         }
+    }
+    
+    #[inline]
+    fn block_pp(&mut self){
+        unsafe {
+            *(self.as_ptr() as *mut u16).add(1) = htons(htons(*(self.as_ptr() as *const u16).add(1))+1);
+        };
     }
 
     fn opcode(&self) -> u8 {
@@ -113,3 +123,15 @@ impl Packet for Vec<u8> {
 
 }
 
+#[test]
+fn is_pp_visible(){
+
+    let block = 6666;
+    let mut v = pack_ack(block);
+    
+    assert_eq!(block, v.block());
+    
+    v.block_pp();
+    
+    assert_eq!(block +1, v.block());
+}

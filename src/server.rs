@@ -10,16 +10,17 @@ mod agent;
 
 use std::{error::Error};
 
-use agent::Agent;
+use crate::packet::Packet;
+use agent::{Agent, RW_mod::Read};
 
 
 fn main() -> Result<(), Box<dyn Error>> {
     
-    let server = Agent::server()?;
+    let server = Agent::new()?;
+
     
-    println!("server: {:?}", server);
-    
+
+
     Ok(())
-    
 }
 

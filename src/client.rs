@@ -3,19 +3,34 @@
 mod packet;
 mod agent;
 
-use agent::Agent;
+use std::error::Error;
 
-use crate::agent::RW_mod::Read;
+use agent::{Agent, RW_mod};
 
-fn main(){    
-    let mut client = Agent::client("127.0.0.1:6969", Read).expect("feaild to create client");
+
+
+fn send_file(addr: &str, path : &str) -> Result<(), Box<dyn Error>> {
+
+    let mut client = Agent::new()?;
+
+    client.set_addr(addr)?;
+    client.send_file(path);
     
-    println!("{:?}", client);
 
-    let pack = packet::pack_read("hello", "netascci");
-    println!("{:?}", pack);
-
-    let size = client.send_pack().expect("faild to send");
     
-    println!("packet of {}b was send", size);
+    Ok(())
+}
+
+
+
+
+fn main() -> Result<(), Box<dyn Error>>{    
+    
+
+
+    // todo 
+    
+
+    Ok(())
+
 }
