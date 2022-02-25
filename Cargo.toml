@@ -15,3 +15,5 @@ path = "src/server.rs"
 
 
 [dependencies]
+
+dns-lookup = "1.0.8"

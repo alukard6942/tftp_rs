@@ -5,14 +5,17 @@
  * Last Modified Date: 09.02.2022
  */
 
-use std::{net::{UdpSocket, SocketAddr, ToSocketAddrs}, io::{self, ErrorKind, Read, Write}, error::Error, time::Duration, fs::{self, File}, path::Path, os::unix::prelude::FileExt, str::FromStr};
+use std::{net::{UdpSocket, SocketAddr, self }, io::{self, ErrorKind, Read, Write}, error::Error, time::Duration, fs::{self, File}, path::Path, os::unix::prelude::FileExt, str::FromStr, option};
+
+extern crate dns_lookup;
+use dns_lookup::{lookup_host, lookup_addr, AddrInfoHints, SockType, getaddrinfo};
 
 use crate::packet::{self, pack_data};
 
 
 
 #[derive(Debug)]
-pub enum RW_mod {Read, Write, None}
+pub enum RW_mod {Read, Write, none}
 
 #[derive(Debug)]
 pub struct Agent {
@@ -64,7 +67,7 @@ impl Agent {
             },
             
             addr: SocketAddr::from(([127,0,0,1], 69)),
-            RW_mod: RW_mod::None,
+            RW_mod: RW_mod::none,
             port: port,
             
             packet: Vec::new(),
@@ -72,6 +75,66 @@ impl Agent {
         })
     }
     
+    
+    pub fn client(addr: &str, RW_mod: RW_mod, filename: &str) -> io::Result<Agent>{
+        
+        let service = "tftp";
+        let hints = AddrInfoHints {
+          socktype: SockType::DGram.into(),
+          .. AddrInfoHints::default()
+        };
+        
+
+        let soc: Option<UdpSocket>;
+        let add: Option<SocketAddr>;
+        for addr in getaddrinfo(Some(addr), Some(service), Some(hints))? {
+            let addr  = match addr {
+                Err(e) => {eprintln!("{:#?}", e); continue;},
+                Ok(o) => o,
+            };
+
+            println!("{:?}", addr );
+            
+
+            Some(add) = addr.into();
+          
+            Some(soc) = match UdpSocket::bind(addr.into()){
+                Err(e) => {eprintln!("{:#?}", e); continue;},
+                Ok(o) => o,
+            };
+            
+        }
+        
+
+        let len = 512;
+        
+        use packet::{pack_ack, pack_data, pack_read, pack_write};
+        
+        
+        Ok(Agent{
+            
+            socket: soc.unwrap(),
+            port: 69,
+
+
+            file: Some(File::open(filename)?),
+
+            RW_mod: RW_mod,
+
+            packet: match RW_mod{
+                NONE  => return Err( io::Error::from(io::ErrorKind::InvalidData) ),
+                Read  => pack_read(filename, "octed"),
+                Write => pack_write(filename, "octed"),
+            },
+            response: match RW_mod{
+                NONE  => return Err( io::Error::from(io::ErrorKind::InvalidData) ),
+                Read  => pack_ack(1),
+                Write => pack_data(1, len),
+            },
+
+        })
+    }
+
     pub fn server() -> io::Result<Agent>{
 
         let socket = UdpSocket::bind("127.0.0.1:69")?;
@@ -80,23 +143,12 @@ impl Agent {
             file: None,
             socket: socket,
             addr: SocketAddr::from(([127,0,0,1], 69)),
-            RW_mod: RW_mod::None,
+            RW_mod: RW_mod::none,
             port: 69,
             packet: Vec::new(),
             response: Vec::new(),
         })
     }
-    
-    pub fn set_addr(&mut self, addr: &str ) -> io::Result<()> {
-        
-        self.addr = match SocketAddr::from_str(addr) {
-            Ok(it) => it,
-            Err(err) => return Err(io::Error::new(io::ErrorKind::AddrNotAvailable, err.to_string())),
-        };
-        
-        Ok(())
-    }
-    
     /**
      * @brief caller must insure that packt is large enough
      * size of packtes should not change only the last one shall be smaller
@@ -220,4 +272,13 @@ fn pack_write() -> Result<(), Box<dyn Error>> {
     agent.pack_data_store()?;
     
     Ok(())
+}
+
+#[test]
+fn client_test()-> Result<(), Box<dyn Error>> {
+    
+    let c = Agent::client("localhost", RW_mod::Read, "/tmp/test")?;
+
+    Ok(())
+    
 }
