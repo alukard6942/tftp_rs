@@ -96,6 +96,7 @@ pub trait Packet {
     fn block(&self) -> u16;
     fn opcode(&self) -> u8;
     fn block_pp(&mut self);
+    fn typeRW(&self) -> u16;
 }
 
 
@@ -119,6 +120,15 @@ impl Packet for Vec<u8> {
 
     fn opcode(&self) -> u8 {
         self[1]
+    }
+    
+    fn typeRW(&self) -> u16 {
+
+        // there might not be space after
+        // is not possible in corect pacckets
+        unsafe {
+            htons(*(self.as_ptr() as *const u16))
+        }
     }
 
 }

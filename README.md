@@ -3,6 +3,11 @@ TFTP
 
 implementation in rust 
 
+reference
+----------------------
+* [bindig sockets](https://jan.newmarch.name/NetworkProgramming/UDP/wrapper.html?rust)
+> so called willed card
+
 
 server
 ----------------------
@@ -16,3 +21,4 @@ client
 Agent
 ----------------------
 - encapsuletes comunication of two agents
+- shuld truncate files on default

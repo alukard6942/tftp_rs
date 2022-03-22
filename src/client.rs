@@ -5,17 +5,15 @@ mod agent;
 
 use std::error::Error;
 
-use agent::{Agent, RW_mod};
+use agent::{Agent, rw_mod};
 use packet::pack_write;
 
 
 
 fn send_file(addr: &str, path : &str) -> Result<(), Box<dyn Error>> {
 
-    let mut client = Agent::client(addr, RW_mod::Write, path )?;
+    let mut client = Agent::client(addr, rw_mod::Write, path )?;
 
-    client.send_pack();
-    
     Ok(())
 }
 
@@ -23,7 +21,7 @@ fn send_file(addr: &str, path : &str) -> Result<(), Box<dyn Error>> {
 #[test]
 fn send_file_test() -> Result<(), Box<dyn Error>>{
     
-    send_file("localhost", "/tmp/test")?;
+    send_file("127.0.0.1:69", "/tmp/test")?;
 
     Ok(())
 }
@@ -31,6 +29,8 @@ fn send_file_test() -> Result<(), Box<dyn Error>>{
 
 fn main() -> Result<(), Box<dyn Error>>{    
     
+    let mut client = Agent::client("127.0.0.1:69", rw_mod::Write , "/tmp/test")?;
+    client.transmit();
 
 
     // todo 
