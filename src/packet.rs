@@ -66,14 +66,14 @@ pub fn pack_write(filename: &str, mode: &str) -> Vec<u8>{
 }
 
 pub fn pack_data( block: u16, size: usize) -> Vec<u8>{
-    let mut v = Vec::with_capacity(size);
+    let mut v = Vec::with_capacity(size +4);
 
     let hblock = htons(block);
     v.push(0);
     v.push(3);
     v.push(hblock as u8);
     v.push((hblock >> 8) as u8);
-    v.resize(size, 0);
+    v.resize(size +4, 0);
 
     return v;
 }
@@ -96,7 +96,6 @@ pub trait Packet {
     fn block(&self) -> u16;
     fn opcode(&self) -> u8;
     fn block_pp(&mut self);
-    fn typeRW(&self) -> u16;
 }
 
 
@@ -121,16 +120,6 @@ impl Packet for Vec<u8> {
     fn opcode(&self) -> u8 {
         self[1]
     }
-    
-    fn typeRW(&self) -> u16 {
-
-        // there might not be space after
-        // is not possible in corect pacckets
-        unsafe {
-            htons(*(self.as_ptr() as *const u16))
-        }
-    }
-
 }
 
 #[test]

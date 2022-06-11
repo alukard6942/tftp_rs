@@ -15,5 +15,6 @@ path = "src/server.rs"
 
 
 [dependencies]
-
+getopts = "*"
 thiserror = "*"
+chrono = "*"
